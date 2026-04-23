@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --primary-violet: #7c3aed;
+  --primary-violet-light: #ede9fe;
+  --primary-green: #22c55e;
+  --primary-green-dark: #15803d;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+    --primary-violet: #a78bfa;
+    --primary-violet-light: #312e81;
+    --primary-green: #4ade80;
+    --primary-green-dark: #166534;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Meritos custom theme utility classes */
+.bg-violet-50 { background-color: var(--primary-violet-light); }
+.bg-violet-100 { background-color: #f3e8ff; }
+.bg-violet-600 { background-color: #7c3aed; }
+.bg-violet-700 { background-color: var(--primary-violet); }
+.bg-violet-800 { background-color: #6d28d9; }
+.text-violet-600 { color: #7c3aed; }
+.text-violet-700 { color: var(--primary-violet); }
+.text-violet-900 { color: #4c1d95; }
+.bg-green-50 { background-color: #f0fdf4; }
+.bg-green-600 { background-color: var(--primary-green); }
+.bg-green-700 { background-color: var(--primary-green-dark); }
+.text-green-700 { color: var(--primary-green-dark); }
+.text-green-900 { color: #166534; }
+.border-green-500 { border-color: #22c55e; }
+
+/* Custom smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Gradient text utility */
+.text-gradient-violet-green {
+  background: linear-gradient(135deg, var(--primary-violet) 0%, var(--primary-green) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Custom animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.delay-100 { animation-delay: 0.1s; }
+.delay-200 { animation-delay: 0.2s; }
+.delay-300 { animation-delay: 0.3s; }
