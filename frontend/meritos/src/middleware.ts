@@ -9,12 +9,12 @@ export function middleware(request: NextRequest) {
 
   // 2. Define the Mapping of Dashboard Paths to Required Roles
   const roleMapping: Record<string, string> = {
-    '/dash/founder': 'founder_group',
     '/dash/student': 'student',
+    '/dash/founder': 'founder',
     '/dash/researcher': 'researcher',
-    '/dash/corp': 'corporation',
     '/dash/investor': 'investor',
-    '/dash/gov': 'government',
+    '/dash/corporation': 'corporation',
+    '/dash/government': 'government',
     '/dash/admin': 'admin',
   }
 
@@ -26,40 +26,34 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
 
+    // Demo mode: allow switching between all dashboard variants.
+    if (token === 'demo-token-123') {
+      return NextResponse.next()
+    }
+
     // IF LOGGED IN BUT TRYING TO ACCESS WRONG ROLE DASHBOARD:
     // Check if the current path matches the user's role
-    const currentPathEntry = Object.entries(roleMapping).find(([path]) => 
-      pathname.startsWith(path)
+    const currentPathEntry = Object.entries(roleMapping).find(([path]) =>
+      pathname === path || pathname.startsWith(`${path}/`)
     )
 
     if (currentPathEntry) {
       const [path, requiredRole] = currentPathEntry
       
       if (role !== requiredRole) {
-        // Redirect them back to their authorized dashboard
-        const authorizedPath = Object.keys(roleMapping).find(
-          key => roleMapping[key] === role
-        ) || '/login'
-        
-        return NextResponse.redirect(new URL(authorizedPath, request.url))
+        // Keep unauthorized users inside dashboard hub instead of bouncing to a role route.
+        return NextResponse.redirect(new URL('/dash', request.url))
       }
     }
   }
 
-  // 4. Redirect logged-in users away from Login/Landing if they already have a session
-  if ((pathname === '/login' || pathname === '/') && token && role) {
-    const authorizedPath = Object.keys(roleMapping).find(
-      key => roleMapping[key] === role
-    )
-    if (authorizedPath) {
-      return NextResponse.redirect(new URL(authorizedPath, request.url))
-    }
-  }
+  // 4. Keep auth pages reachable even when a session exists.
+  // This supports role switching / new sign-up flows from the landing page.
 
   return NextResponse.next()
 }
 
 // 5. Configure the Middleware to only run on dashboard routes for performance
 export const config = {
-  matcher: ['/dash/:path*', '/login', '/'],
+  matcher: ['/dash/:path*', '/login', '/signup', '/'],
 }

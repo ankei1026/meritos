@@ -1,411 +1,954 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
-const SUPPLY_USERS = [
+/* ─── Supply-side user types (Free) ─── */
+const SUPPLY = [
   {
-    id: "students",
     icon: "🎓",
     label: "Students",
-    headline: "Break into early-stage startups and innovation labs",
-    body: "Skip the closed-door networks. Meritos auto-builds your profile from LinkedIn, GitHub, and academic records — then surfaces you directly to verified investors and corporate recruiters looking for emerging talent.",
-    perks: ["Auto-profile from LinkedIn & GitHub", "Access exclusive pitch competitions", "Connect with startup founders actively hiring"],
-    color: "#1A56DB", light: "#EEF3FF", tag: "Free forever",
-    stats: { profiles: "8.2k", profilesNote: "↑ 420 this month", matchRate: "74%" },
-    signals: [{ label: "Skills alignment", pct: 87 }, { label: "Domain relevance", pct: 74 }, { label: "Network proximity", pct: 62 }],
+    color: "#1A56DB",
+    light: "#EEF3FF",
+    desc: "Break into innovation without cold emails or closed networks.",
+    tag: "Free forever",
   },
   {
-    id: "founders",
     icon: "🚀",
     label: "Startup Founders",
-    headline: "Spend more time building, less time fundraising",
-    body: "Stop cold-emailing VCs into the void. Meritos' AI matching engine delivers your pitch to investors whose mandates align with your stage, sector, and traction — before your competitors are even on their radar.",
-    perks: ["AI-matched to aligned investors", "Data room integrations built-in", "Bypass gatekeepers and closed networks"],
-    color: "#7C3AED", light: "#F5F3FF", tag: "Free forever",
-    stats: { profiles: "3.4k", profilesNote: "↑ 180 this month", matchRate: "81%" },
-    signals: [{ label: "Skills alignment", pct: 92 }, { label: "Domain relevance", pct: 85 }, { label: "Network proximity", pct: 70 }],
+    color: "#7C3AED",
+    light: "#F5F3FF",
+    desc: "Spend less time fundraising. Get matched to aligned investors directly.",
+    tag: "Free forever",
   },
   {
-    id: "researchers",
     icon: "🔬",
     label: "Researchers",
-    headline: "Turn your academic breakthroughs into commercial reality",
-    body: "Your research deserves more than a journal shelf. Meritos connects you to corporations actively scouting IP and R&D talent, creating direct pathways from the lab to the market.",
-    perks: ["Direct visibility to corporate innovation labs", "Paper-to-profile AI parsing", "IP licensing deal flow support"],
-    color: "#0E7A4E", light: "#ECFDF5", tag: "Free forever",
-    stats: { profiles: "1.9k", profilesNote: "↑ 95 this month", matchRate: "68%" },
-    signals: [{ label: "Skills alignment", pct: 78 }, { label: "Domain relevance", pct: 91 }, { label: "Network proximity", pct: 55 }],
+    color: "#0E7A4E",
+    light: "#ECFDF5",
+    desc: "Turn academic breakthroughs into commercial reality — without the gatekeepers.",
+    tag: "Free forever",
   },
 ];
 
-const DEMAND_USERS = [
+/* ─── Demand-side user types (Paid) ─── */
+const DEMAND = [
   {
-    id: "investors",
     icon: "💼",
     label: "Investors",
-    headline: "AI-curated deal flow, not noise",
-    body: "Stop sifting through thousands of unvetted pitches. Meritos' vector matching engine scores and ranks startups against your exact investment mandate — delivering high-signal opportunities directly to your dashboard.",
-    perks: ["First-look access before public channels", "Mandate-matched startup scoring", "Integrated due diligence data rooms"],
-    color: "#B45309", light: "#FFFBEB", tag: "Paid access",
-    stats: { saved: "40hrs", matchRate: "93%" },
-    signals: [{ label: "Investment mandate fit", pct: 93 }, { label: "Stage alignment", pct: 87 }, { label: "Network proximity", pct: 79 }],
+    color: "#B45309",
+    light: "#FFFBEB",
+    desc: "AI-curated deal flow matched to your mandate. Zero noise, only signal.",
+    tag: "Subscription",
   },
   {
-    id: "corporations",
     icon: "🏢",
     label: "Corporations",
-    headline: "Scout niche talent and acquire R&D before competitors do",
-    body: "Your next breakthrough hire or IP acquisition is already on Meritos. Access a pre-vetted database of researchers and founders matched to your innovation lab's specific problem statements.",
-    perks: ["AI-matched researchers and student talent", "Early-stage R&D scouting", "Bulk HR and innovation lab licensing"],
-    color: "#0C444C", light: "#F0FAFB", tag: "Enterprise subscription",
-    stats: { saved: "60hrs", matchRate: "89%" },
-    signals: [{ label: "R&D problem alignment", pct: 89 }, { label: "IP commercializability", pct: 82 }, { label: "Network proximity", pct: 74 }],
+    color: "#0C444C",
+    light: "#F0FAFB",
+    desc: "Scout niche R&D talent and acquire IP before your competitors do.",
+    tag: "Enterprise",
   },
   {
-    id: "government",
     icon: "🏛️",
     label: "Government",
-    headline: "Accelerate national innovation through a single platform",
-    body: "From grant distribution to startup ecosystem monitoring, Meritos gives government innovation agencies a live view of the talent and ventures shaping tomorrow's economy.",
-    perks: ["Ecosystem health dashboards", "Grant program pipeline management", "University and research institution integrations"],
-    color: "#374151", light: "#F9FAFB", tag: "Institutional plan",
-    stats: { saved: "28hrs", matchRate: "85%" },
-    signals: [{ label: "Policy mandate match", pct: 85 }, { label: "Grant eligibility", pct: 78 }, { label: "Network proximity", pct: 65 }],
+    color: "#374151",
+    light: "#F9FAFB",
+    desc: "Monitor national innovation in real time. Direct grants to the right people.",
+    tag: "Institutional",
   },
 ];
 
-export default function Home() {
-  const [scrolled, setScrolled] = useState(false);
-  const [activeSupply, setActiveSupply] = useState("students");
-  const [activeDemand, setActiveDemand] = useState("investors");
+/* ─── Testimonials ─── */
+const TESTIMONIALS = [
+  {
+    quote:
+      "Meritos cut our investor search from months to two weeks. The AI matched us to funds that actually understood our space.",
+    name: "Sarah Chen",
+    role: "Founder, NanoMed Labs",
+    initials: "SC",
+    color: "#7C3AED",
+  },
+  {
+    quote:
+      "As a researcher, I had zero commercial pathway. Within 30 days on Meritos I had three corporations actively requesting calls.",
+    name: "Dr. Chen Wei",
+    role: "MIT · Quantum Computing",
+    initials: "CW",
+    color: "#0E7A4E",
+  },
+  {
+    quote:
+      "We replaced an entire scouting team with one Meritos subscription. Deal flow quality went up. Noise went to zero.",
+    name: "James Okafor",
+    role: "Partner, Apex Growth Fund",
+    initials: "JO",
+    color: "#B45309",
+  },
+];
+
+/* ─── Animated counter ─── */
+function Counter({
+  to,
+  suffix = "",
+  prefix = "",
+  duration = 1800,
+}: {
+  to: number;
+  suffix?: string;
+  prefix?: string;
+  duration?: number;
+}) {
+  const [val, setVal] = useState(0);
+  const ref = useRef<HTMLSpanElement>(null);
+  const started = useRef(false);
 
   useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 20);
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !started.current) {
+          started.current = true;
+          const start = performance.now();
+          const tick = (now: number) => {
+            const progress = Math.min((now - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            setVal(Math.round(eased * to));
+            if (progress < 1) requestAnimationFrame(tick);
+          };
+          requestAnimationFrame(tick);
+        }
+      },
+      { threshold: 0.5 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [to, duration]);
+
+  return (
+    <span ref={ref}>
+      {prefix}
+      {val.toLocaleString()}
+      {suffix}
+    </span>
+  );
+}
+
+/* ─── Nav ─── */
+function Nav() {
+  const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const fn = () => setScrolled(window.scrollY > 24);
     window.addEventListener("scroll", fn);
     return () => window.removeEventListener("scroll", fn);
   }, []);
 
-  const su = SUPPLY_USERS.find((u) => u.id === activeSupply)!;
-  const du = DEMAND_USERS.find((u) => u.id === activeDemand)!;
+  return (
+    <nav
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 100,
+        transition: "all .25s",
+        background: scrolled ? "rgba(250,250,248,.94)" : "transparent",
+        backdropFilter: scrolled ? "blur(14px)" : "none",
+        borderBottom: scrolled ? "1px solid #E8E5DF" : "1px solid transparent",
+        padding: "0 2rem",
+      }}
+    >
+      <div
+        style={{
+          maxWidth: 1200,
+          margin: "0 auto",
+          height: 68,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        {/* Logo */}
+        <a
+          href="/"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            textDecoration: "none",
+          }}
+        >
+          <div
+            style={{
+              width: 30,
+              height: 30,
+              background: "#1A56DB",
+              borderRadius: 8,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+              <path
+                d="M2 9l3.5 3.5L14 4"
+                stroke="#fff"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+          <span
+            style={{
+              fontFamily: "'Bricolage Grotesque', sans-serif",
+              fontWeight: 700,
+              fontSize: "1.2rem",
+              color: "#111110",
+              letterSpacing: "-.02em",
+            }}
+          >
+            Meritos
+          </span>
+        </a>
+
+        {/* Desktop links */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "2rem",
+          }}
+          className="nav-desktop"
+        >
+          {["How it works", "For Talent", "For Enterprise", "Roadmap"].map(
+            (l) => (
+              <a
+                key={l}
+                href={`#${l.toLowerCase().replace(/ /g, "-")}`}
+                style={{
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: ".875rem",
+                  fontWeight: 500,
+                  color: "#6B6860",
+                  textDecoration: "none",
+                  transition: "color .15s",
+                }}
+                onMouseEnter={(e) =>
+                  ((e.currentTarget as HTMLElement).style.color = "#111110")
+                }
+                onMouseLeave={(e) =>
+                  ((e.currentTarget as HTMLElement).style.color = "#6B6860")
+                }
+              >
+                {l}
+              </a>
+            )
+          )}
+        </div>
+
+        {/* CTA */}
+        <div style={{ display: "flex", gap: ".625rem", alignItems: "center" }}>
+          <a
+            href="/login"
+            style={{
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: ".875rem",
+              fontWeight: 500,
+              color: "#6B6860",
+              textDecoration: "none",
+              padding: ".5rem .875rem",
+            }}
+          >
+            Log in
+          </a>
+          <a
+            href="/signup"
+            style={{
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: ".875rem",
+              fontWeight: 500,
+              color: "#fff",
+              background: "#111110",
+              textDecoration: "none",
+              padding: ".5rem 1.125rem",
+              borderRadius: 8,
+              transition: "opacity .15s",
+            }}
+            onMouseEnter={(e) =>
+              ((e.currentTarget as HTMLElement).style.opacity = ".85")
+            }
+            onMouseLeave={(e) =>
+              ((e.currentTarget as HTMLElement).style.opacity = "1")
+            }
+          >
+            Join free →
+          </a>
+        </div>
+      </div>
+
+      <style>{`
+        @media(max-width:768px) { .nav-desktop { display:none !important; } }
+      `}</style>
+    </nav>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   MAIN PAGE
+═══════════════════════════════════════════ */
+export default function Home() {
+  const [activeRole, setActiveRole] = useState<"talent" | "enterprise">(
+    "talent"
+  );
+  const [email, setEmail] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    setSubmitting(true);
+    await new Promise((r) => setTimeout(r, 900));
+    setSubmitting(false);
+    setSubmitted(true);
+  };
 
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap');
-        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-        :root{--bg:#FAFAF8;--surface:#fff;--border:#E8E5DF;--t1:#111110;--t2:#6B6860;--t3:#9B9890;--accent:#1A56DB;--accent-lt:#EEF3FF;--accent-dk:#1344B8;}
-        html{scroll-behavior:smooth;}
-        body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--t1);line-height:1.6;font-size:16px;-webkit-font-smoothing:antialiased;}
-        h1,h2,h3,h4{font-family:'Bricolage Grotesque',sans-serif;letter-spacing:-0.02em;}
+        @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap');
 
-        .nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 2rem;transition:all .25s;}
-        .nav.scrolled{background:rgba(250,250,248,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);}
-        .nav-inner{max-width:1200px;margin:0 auto;height:68px;display:flex;align-items:center;justify-content:space-between;}
-        .logo{font-family:'Bricolage Grotesque',sans-serif;font-size:1.35rem;font-weight:700;color:var(--t1);text-decoration:none;display:flex;align-items:center;gap:9px;}
-        .logo-mark{width:30px;height:30px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;}
-        .logo-mark svg{width:16px;height:16px;}
-        .nav-links{display:flex;align-items:center;gap:2rem;list-style:none;}
-        .nav-links a{font-size:.875rem;font-weight:500;color:var(--t2);text-decoration:none;transition:color .15s;}
-        .nav-links a:hover{color:var(--t1);}
-        .nav-actions{display:flex;align-items:center;gap:.75rem;}
-        .btn-ghost{font-family:'DM Sans',sans-serif;font-size:.875rem;font-weight:500;color:var(--t2);background:none;border:none;cursor:pointer;padding:.5rem 1rem;border-radius:8px;text-decoration:none;transition:color .15s,background .15s;}
-        .btn-ghost:hover{color:var(--t1);background:var(--border);}
-        .btn-primary{font-family:'DM Sans',sans-serif;font-size:.875rem;font-weight:500;color:#fff;background:var(--accent);border:none;cursor:pointer;padding:.5rem 1.125rem;border-radius:8px;text-decoration:none;transition:background .15s,transform .1s;display:inline-flex;align-items:center;gap:6px;}
-        .btn-primary:hover{background:var(--accent-dk);}
-        .btn-primary:active{transform:scale(.98);}
-        .btn-primary-lg{font-size:1rem;padding:.75rem 1.75rem;border-radius:10px;}
-        .btn-outline-lg{font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:500;color:var(--t1);background:transparent;border:1px solid var(--border);cursor:pointer;padding:.75rem 1.75rem;border-radius:10px;text-decoration:none;transition:border-color .15s,background .15s;display:inline-flex;align-items:center;gap:8px;}
-        .btn-outline-lg:hover{border-color:#c0bcb5;background:#F5F3EF;}
-        .hamburger{display:none;background:none;border:none;cursor:pointer;flex-direction:column;gap:5px;padding:6px;}
-        .hamburger span{display:block;width:22px;height:2px;background:var(--t1);border-radius:2px;}
-
-        /* HERO */
-        .hero{padding:148px 2rem 80px;max-width:1200px;margin:0 auto;}
-        .hero-top{text-align:center;max-width:820px;margin:0 auto 4rem;}
-        .hero-eyebrow{display:inline-flex;align-items:center;gap:8px;background:var(--accent-lt);border:1px solid #C7D9FA;color:var(--accent);font-size:.8rem;font-weight:500;padding:5px 14px;border-radius:100px;margin-bottom:1.5rem;}
-        .pulse{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:p 2s infinite;}
-        @keyframes p{0%,100%{opacity:1}50%{opacity:.35}}
-        .hero h1{font-size:clamp(2.75rem,5.5vw,4.25rem);font-weight:700;line-height:1.08;color:var(--t1);margin-bottom:1.25rem;}
-        .hero h1 em{font-style:normal;color:var(--accent);}
-        .hero-sub{font-size:1.1rem;color:var(--t2);max-width:640px;margin:0 auto 2rem;line-height:1.7;font-weight:300;}
-        .hero-ctas{display:flex;align-items:center;justify-content:center;gap:.875rem;flex-wrap:wrap;margin-bottom:1.5rem;}
-        .hero-note{font-size:.78rem;color:var(--t3);}
-        .hero-note strong{color:var(--t2);font-weight:500;}
-
-        /* MARKETPLACE */
-        .marketplace{display:grid;grid-template-columns:1fr auto 1fr;gap:2rem;align-items:center;max-width:1100px;margin:0 auto;}
-        .mkt-side{display:flex;flex-direction:column;gap:.75rem;}
-        .mkt-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:1rem 1.25rem;display:flex;align-items:center;gap:12px;transition:border-color .2s,box-shadow .2s,transform .2s;}
-        .mkt-card:hover{border-color:#c0bcb5;box-shadow:0 4px 16px rgba(0,0,0,.07);transform:translateY(-2px);}
-        .mkt-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
-        .mkt-card-text{flex:1;}
-        .mkt-card-title{font-size:.875rem;font-weight:600;color:var(--t1);}
-        .mkt-card-sub{font-size:.75rem;color:var(--t2);font-weight:300;}
-        .mkt-tag{font-size:.65rem;font-weight:600;padding:3px 8px;border-radius:100px;white-space:nowrap;}
-        .mkt-center{display:flex;flex-direction:column;align-items:center;gap:.5rem;}
-        .mkt-engine{background:var(--t1);border-radius:20px;padding:2rem 1.5rem;display:flex;flex-direction:column;align-items:center;gap:.75rem;text-align:center;min-width:180px;}
-        .mkt-engine-icon{width:52px;height:52px;background:var(--accent);border-radius:14px;display:flex;align-items:center;justify-content:center;}
-        .mkt-engine-icon svg{width:26px;height:26px;color:#fff;}
-        .mkt-engine-title{font-family:'Bricolage Grotesque',sans-serif;font-size:.95rem;font-weight:700;color:#fff;}
-        .mkt-engine-sub{font-size:.7rem;color:rgba(255,255,255,.5);line-height:1.5;font-weight:300;}
-        .mkt-arrow{font-size:.9rem;color:var(--border);font-weight:500;}
-        .side-label{font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;text-align:center;margin-bottom:.25rem;}
-
-        /* SECTIONS */
-        .section{padding:96px 2rem;}
-        .section-inner{max-width:1200px;margin:0 auto;}
-        .section-label{font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);margin-bottom:.75rem;}
-        .section-title{font-size:clamp(1.75rem,3.5vw,2.5rem);font-weight:700;line-height:1.2;color:var(--t1);margin-bottom:1rem;max-width:640px;}
-        .section-body{font-size:1rem;color:var(--t2);max-width:520px;line-height:1.7;font-weight:300;}
-
-        /* LOGOS */
-        .logos-strip{padding:36px 2rem;border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:#fff;text-align:center;}
-        .logos-strip-label{font-size:.72rem;color:var(--t3);font-weight:500;text-transform:uppercase;letter-spacing:.09em;margin-bottom:1.25rem;}
-        .logos-row{display:flex;align-items:center;justify-content:center;gap:3rem;flex-wrap:wrap;}
-        .logo-name{font-family:'Bricolage Grotesque',sans-serif;font-size:1.05rem;font-weight:700;color:var(--t3);transition:color .2s;}
-        .logo-name:hover{color:var(--t2);}
-
-        /* USER TABS */
-        .user-tabs{display:flex;gap:.5rem;margin-bottom:2rem;}
-        .user-tab{font-family:'DM Sans',sans-serif;font-size:.875rem;font-weight:500;color:var(--t2);background:none;border:1px solid transparent;cursor:pointer;padding:.5rem 1.1rem;border-radius:100px;transition:all .2s;display:flex;align-items:center;gap:6px;}
-        .user-tab:hover{background:#F5F3EF;border-color:var(--border);}
-        .user-tab.active{background:#fff;border-color:var(--border);color:var(--t1);box-shadow:0 1px 4px rgba(0,0,0,.06);}
-        .user-panel{background:#fff;border:1px solid var(--border);border-radius:20px;padding:2.5rem;display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center;}
-        .user-panel-badge{display:inline-flex;align-items:center;gap:6px;font-size:.72rem;font-weight:600;padding:4px 11px;border-radius:100px;margin-bottom:1rem;}
-        .user-panel h3{font-size:1.5rem;font-weight:700;color:var(--t1);line-height:1.25;margin-bottom:.875rem;}
-        .user-panel p{font-size:.9375rem;color:var(--t2);line-height:1.7;font-weight:300;margin-bottom:1.5rem;}
-        .perks{list-style:none;display:flex;flex-direction:column;gap:.625rem;margin-bottom:2rem;}
-        .perk{display:flex;align-items:flex-start;gap:10px;font-size:.875rem;color:var(--t1);}
-        .perk-check{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
-        .perk-check svg{width:9px;height:9px;}
-        .panel-ctas{display:flex;gap:.75rem;flex-wrap:wrap;}
-        .panel-right{background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:1.5rem;}
-        .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.875rem;}
-        .stat-box{background:#fff;border:1px solid var(--border);border-radius:10px;padding:.875rem;}
-        .stat-box-label{font-size:.65rem;color:var(--t3);font-weight:500;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;}
-        .stat-box-value{font-family:'Bricolage Grotesque',sans-serif;font-size:1.5rem;font-weight:700;line-height:1;}
-        .stat-box-note{font-size:.65rem;font-weight:500;margin-top:2px;}
-        .signal-box{background:#fff;border:1px solid var(--border);border-radius:10px;padding:.875rem;}
-        .signal-title{font-size:.72rem;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.625rem;}
-        .signal-row{display:flex;align-items:center;gap:8px;margin-bottom:.5rem;}
-        .signal-row:last-child{margin-bottom:0;}
-        .signal-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-        .signal-bar-wrap{flex:1;height:6px;background:var(--bg);border-radius:100px;overflow:hidden;}
-        .signal-bar{height:100%;border-radius:100px;}
-        .signal-pct{font-size:.7rem;color:var(--t2);font-weight:500;min-width:36px;text-align:right;}
-
-        /* SPLIT */
-        .side-split{display:grid;grid-template-columns:1fr 1fr;gap:2px;border:1px solid var(--border);border-radius:20px;overflow:hidden;}
-        .split-panel{padding:3rem;}
-        .split-panel.supply{background:#fff;}
-        .split-panel.demand{background:var(--t1);}
-        .split-tag{display:inline-flex;align-items:center;gap:5px;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;padding:4px 10px;border-radius:100px;margin-bottom:1.25rem;}
-        .supply .split-tag{background:var(--accent-lt);color:var(--accent);}
-        .demand .split-tag{background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);}
-        .split-title{font-size:1.4rem;font-weight:700;line-height:1.25;margin-bottom:.75rem;}
-        .supply .split-title{color:var(--t1);}
-        .demand .split-title{color:#fff;}
-        .split-body{font-size:.875rem;line-height:1.65;font-weight:300;margin-bottom:1.75rem;}
-        .supply .split-body{color:var(--t2);}
-        .demand .split-body{color:rgba(255,255,255,.6);}
-        .split-list{list-style:none;display:flex;flex-direction:column;gap:.6rem;margin-bottom:1.75rem;}
-        .split-item{display:flex;align-items:center;gap:8px;font-size:.825rem;}
-        .supply .split-item{color:var(--t2);}
-        .demand .split-item{color:rgba(255,255,255,.75);}
-        .split-bullet{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
-        .supply .split-bullet{background:var(--accent);}
-        .demand .split-bullet{background:rgba(255,255,255,.4);}
-        .btn-supply{font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:500;color:#fff;background:var(--accent);border:none;cursor:pointer;padding:.6875rem 1.5rem;border-radius:9px;text-decoration:none;transition:background .15s;display:inline-flex;align-items:center;gap:6px;}
-        .btn-supply:hover{background:var(--accent-dk);}
-        .btn-demand{font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:500;color:var(--t1);background:#fff;border:none;cursor:pointer;padding:.6875rem 1.5rem;border-radius:9px;text-decoration:none;transition:opacity .15s;display:inline-flex;align-items:center;gap:6px;}
-        .btn-demand:hover{opacity:.9;}
-
-        /* AI */
-        .ai-section{background:var(--t1);}
-        .ai-grid{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;}
-        .ai-label{font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.4);margin-bottom:.75rem;}
-        .ai-title{font-size:clamp(1.75rem,3.5vw,2.5rem);font-weight:700;line-height:1.2;color:#fff;margin-bottom:1rem;}
-        .ai-body{font-size:1rem;color:rgba(255,255,255,.55);line-height:1.7;font-weight:300;}
-        .ai-cards{display:flex;flex-direction:column;gap:.75rem;margin-top:2rem;}
-        .ai-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:1.25rem;display:flex;gap:1rem;align-items:flex-start;}
-        .ai-card-icon{width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-        .ai-card-icon svg{width:18px;height:18px;color:rgba(255,255,255,.8);}
-        .ai-card h4{font-size:.9rem;font-weight:600;color:#fff;margin-bottom:3px;}
-        .ai-card p{font-size:.8rem;color:rgba(255,255,255,.5);line-height:1.55;font-weight:300;}
-        .ai-visual{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:2rem;}
-        .ai-vis-label{font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.4);margin-bottom:1.25rem;}
-        .match-result{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:1rem 1.25rem;margin-bottom:.75rem;display:flex;align-items:center;gap:12px;}
-        .match-result:last-child{margin-bottom:0;}
-        .match-avatar{width:36px;height:36px;border-radius:9px;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
-        .match-info{flex:1;}
-        .match-name{font-size:.825rem;font-weight:600;color:#fff;}
-        .match-type{font-size:.7rem;color:rgba(255,255,255,.45);font-weight:300;}
-        .score-num{font-family:'Bricolage Grotesque',sans-serif;font-size:1.1rem;font-weight:700;}
-        .score-label{font-size:.6rem;color:rgba(255,255,255,.35);}
-
-        /* STATS */
-        .stats-section{background:var(--accent);}
-        .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2rem;text-align:center;}
-        .stat-value{font-family:'Bricolage Grotesque',sans-serif;font-size:3rem;font-weight:700;color:#fff;line-height:1;margin-bottom:8px;}
-        .stat-label{font-size:.875rem;color:rgba(255,255,255,.65);font-weight:300;}
-
-        /* ROADMAP */
-        .roadmap-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:3.5rem;}
-        .roadmap-card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:1.75rem;position:relative;overflow:hidden;}
-        .roadmap-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
-        .phase-1::before{background:var(--accent);}
-        .phase-2::before{background:#7C3AED;}
-        .phase-3::before{background:#0E7A4E;}
-        .roadmap-phase{font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;margin-bottom:.75rem;}
-        .phase-1 .roadmap-phase{color:var(--accent);}
-        .phase-2 .roadmap-phase{color:#7C3AED;}
-        .phase-3 .roadmap-phase{color:#0E7A4E;}
-        .roadmap-card h3{font-size:1.05rem;font-weight:700;color:var(--t1);margin-bottom:.5rem;}
-        .roadmap-card p{font-size:.875rem;color:var(--t2);line-height:1.6;font-weight:300;}
-        .roadmap-milestone{margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);font-size:.78rem;font-weight:500;color:var(--t3);display:flex;align-items:center;gap:6px;}
-
-        /* CTA */
-        .cta-section{background:var(--bg);}
-        .cta-box{background:var(--t1);border-radius:24px;padding:5rem 3rem;text-align:center;max-width:900px;margin:0 auto;}
-        .cta-box h2{font-size:clamp(2rem,4vw,3rem);font-weight:700;color:#fff;margin-bottom:1rem;line-height:1.15;}
-        .cta-box p{font-size:1.0625rem;color:rgba(255,255,255,.6);margin-bottom:2.25rem;font-weight:300;}
-        .cta-actions{display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;}
-        .btn-cta-white{font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:500;color:var(--t1);background:#fff;border:none;cursor:pointer;padding:.8125rem 1.875rem;border-radius:10px;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:opacity .15s;}
-        .btn-cta-white:hover{opacity:.9;}
-        .btn-cta-outline{font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:500;color:#fff;background:transparent;border:1.5px solid rgba(255,255,255,.25);cursor:pointer;padding:.8125rem 1.875rem;border-radius:10px;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:border-color .15s;}
-        .btn-cta-outline:hover{border-color:rgba(255,255,255,.55);}
-
-        /* FOOTER */
-        .footer{background:#fff;border-top:1px solid var(--border);padding:60px 2rem 40px;}
-        .footer-inner{max-width:1200px;margin:0 auto;}
-        .footer-top{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:3rem;margin-bottom:3rem;}
-        .footer-brand p{font-size:.875rem;color:var(--t2);line-height:1.6;margin-top:.875rem;max-width:260px;font-weight:300;}
-        .footer-col h4{font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--t1);margin-bottom:1rem;}
-        .footer-col ul{list-style:none;display:flex;flex-direction:column;gap:.6rem;}
-        .footer-col ul a{font-size:.875rem;color:var(--t2);text-decoration:none;transition:color .15s;font-weight:300;}
-        .footer-col ul a:hover{color:var(--t1);}
-        .footer-bottom{border-top:1px solid var(--border);padding-top:1.5rem;display:flex;align-items:center;justify-content:space-between;}
-        .footer-copy{font-size:.8rem;color:var(--t3);}
-        .footer-legal{display:flex;gap:1.5rem;}
-        .footer-legal a{font-size:.8rem;color:var(--t3);text-decoration:none;}
-        .footer-legal a:hover{color:var(--t2);}
-
-        @media(max-width:1024px){
-          .marketplace{grid-template-columns:1fr;}
-          .mkt-side{flex-direction:row;flex-wrap:wrap;}
-          .mkt-center{flex-direction:row;}
-          .mkt-arrow{transform:rotate(90deg);}
-          .ai-grid{grid-template-columns:1fr;}
-          .side-split{grid-template-columns:1fr;border-radius:16px;}
-          .user-panel{grid-template-columns:1fr;}
-          .footer-top{grid-template-columns:1fr 1fr;}
-          .roadmap-grid{grid-template-columns:1fr;}
-          .stats-grid{grid-template-columns:repeat(2,1fr);}
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body {
+          font-family: 'DM Sans', sans-serif;
+          background: #FAFAF8;
+          color: #111110;
+          -webkit-font-smoothing: antialiased;
         }
-        @media(max-width:768px){
-          .nav-links,.nav-actions{display:none;}
-          .hamburger{display:flex;}
-          .hero h1{font-size:2.25rem;}
-          .user-tabs{overflow-x:auto;}
-          .footer-top{grid-template-columns:1fr;gap:2rem;}
-          .footer-bottom{flex-direction:column;gap:1rem;text-align:center;}
+        h1, h2, h3, h4 {
+          font-family: 'Bricolage Grotesque', sans-serif;
+          letter-spacing: -.025em;
+        }
+
+        /* ── hero animations ── */
+        @keyframes fadeUp {
+          from { opacity:0; transform:translateY(20px); }
+          to   { opacity:1; transform:translateY(0); }
+        }
+        @keyframes scaleIn {
+          from { opacity:0; transform:scale(.96); }
+          to   { opacity:1; transform:scale(1); }
+        }
+        @keyframes floatA {
+          0%,100% { transform:translateY(0px); }
+          50%      { transform:translateY(-10px); }
+        }
+        @keyframes floatB {
+          0%,100% { transform:translateY(0px); }
+          50%      { transform:translateY(-7px); }
+        }
+        @keyframes pulse {
+          0%,100% { opacity:1; }
+          50%      { opacity:.4; }
+        }
+        @keyframes marquee {
+          from { transform:translateX(0); }
+          to   { transform:translateX(-50%); }
+        }
+
+        .fade-1 { animation: fadeUp .7s ease .1s both; }
+        .fade-2 { animation: fadeUp .7s ease .22s both; }
+        .fade-3 { animation: fadeUp .7s ease .34s both; }
+        .fade-4 { animation: fadeUp .7s ease .46s both; }
+        .scale-in { animation: scaleIn .8s ease .5s both; }
+
+        /* ── role card hover ── */
+        .role-card {
+          transition: border-color .2s, box-shadow .2s, transform .2s;
+          cursor: default;
+        }
+        .role-card:hover {
+          border-color: #C8C4BC !important;
+          box-shadow: 0 6px 24px rgba(0,0,0,.07);
+          transform: translateY(-2px);
+        }
+
+        /* ── CTA button ── */
+        .cta-btn {
+          transition: opacity .15s, transform .1s;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          text-decoration: none;
+          font-family: 'DM Sans', sans-serif;
+          font-weight: 500;
+          cursor: pointer;
+          border: none;
+        }
+        .cta-btn:hover { opacity: .88; }
+        .cta-btn:active { transform: scale(.98); }
+
+        /* ── marquee strip ── */
+        .marquee-inner {
+          display: flex;
+          width: max-content;
+          animation: marquee 28s linear infinite;
+        }
+
+        /* ── step connector ── */
+        .step-connector {
+          position: absolute;
+          top: 22px;
+          left: calc(50% + 22px);
+          right: calc(-50% + 22px);
+          height: 1px;
+          background: #E8E5DF;
+          z-index: 0;
+        }
+
+        /* ── testimonial card ── */
+        .tcard:hover {
+          border-color: #C8C4BC !important;
+          box-shadow: 0 4px 20px rgba(0,0,0,.06);
+        }
+
+        /* ── email input ── */
+        .email-input:focus {
+          outline: none;
+          border-color: #111110 !important;
+          box-shadow: 0 0 0 3px rgba(17,17,16,.1);
+        }
+
+        @media(max-width:900px) {
+          .hero-grid  { grid-template-columns: 1fr !important; }
+          .steps-grid { grid-template-columns: 1fr !important; }
+          .step-connector { display: none !important; }
+          .tgrid      { grid-template-columns: 1fr !important; }
+        }
+        @media(max-width:600px) {
+          .role-grid  { grid-template-columns: 1fr !important; }
+          .stats-grid { grid-template-columns: repeat(2,1fr) !important; }
+          .hero-ctas  { flex-direction: column !important; }
         }
       `}</style>
 
-      {/* NAV */}
-      <nav className={`nav${scrolled ? " scrolled" : ""}`}>
-        <div className="nav-inner">
-          <a href="#" className="logo">
-            <div className="logo-mark">
-              <svg viewBox="0 0 16 16" fill="none">
-                <path d="M2 9l3.5 3.5L14 4" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            Meritos
-          </a>
-          <ul className="nav-links">
-            <li><a href="#users">Who it's for</a></li>
-            <li><a href="#model">How it works</a></li>
-            <li><a href="#ai">AI Engine</a></li>
-            <li><a href="#roadmap">Roadmap</a></li>
-          </ul>
-          <div className="nav-actions">
-            <a href="/login" className="btn-ghost">Log in</a>
-            <a href="/signup" className="btn-primary">
-              Join free
-              <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </a>
-          </div>
-          <button className="hamburger" aria-label="Menu"><span/><span/><span/></button>
+      <Nav />
+
+      {/* ═══ HERO ═══════════════════════════════════ */}
+      <section
+        style={{
+          paddingTop: 140,
+          paddingBottom: 100,
+          paddingLeft: "2rem",
+          paddingRight: "2rem",
+          maxWidth: 1200,
+          margin: "0 auto",
+        }}
+      >
+        {/* Eyebrow */}
+        <div
+          className="fade-1"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 7,
+            background: "#EEF3FF",
+            border: "1px solid #C7D9FA",
+            borderRadius: 999,
+            padding: "5px 14px",
+            marginBottom: "1.5rem",
+          }}
+        >
+          <span
+            style={{
+              width: 7,
+              height: 7,
+              borderRadius: "50%",
+              background: "#1A56DB",
+              animation: "pulse 2s infinite",
+              flexShrink: 0,
+            }}
+          />
+          <span
+            style={{
+              fontSize: ".78rem",
+              fontWeight: 600,
+              color: "#1A56DB",
+            }}
+          >
+            Ecosystem-as-a-Service · Now in public beta
+          </span>
         </div>
-      </nav>
 
-      {/* HERO */}
-      <section style={{ background: "var(--bg)" }}>
-        <div className="hero">
-          <div className="hero-top">
-            <div className="hero-eyebrow">
-              <div className="pulse"/>
-              Ecosystem-as-a-Service · Now in public beta
+        {/* Headline + sub */}
+        <div
+          style={{
+            maxWidth: 780,
+            marginBottom: "2.5rem",
+          }}
+        >
+          <h1
+            className="fade-2"
+            style={{
+              fontSize: "clamp(2.8rem, 6vw, 5rem)",
+              fontWeight: 800,
+              lineHeight: 1.06,
+              color: "#111110",
+              marginBottom: "1.25rem",
+            }}
+          >
+            The platform where{" "}
+            <span
+              style={{
+                position: "relative",
+                display: "inline-block",
+              }}
+            >
+              <span style={{ color: "#1A56DB" }}>innovators</span>
+              <svg
+                viewBox="0 0 200 12"
+                style={{
+                  position: "absolute",
+                  bottom: -4,
+                  left: 0,
+                  width: "100%",
+                  height: 8,
+                  overflow: "visible",
+                }}
+              >
+                <path
+                  d="M2 8 Q50 2 100 8 Q150 14 198 6"
+                  stroke="#1A56DB"
+                  strokeWidth="2.5"
+                  fill="none"
+                  strokeLinecap="round"
+                  opacity=".4"
+                />
+              </svg>
+            </span>{" "}
+            meet{" "}
+            <span style={{ color: "#0E7A4E" }}>capital</span>{" "}
+            and opportunity.
+          </h1>
+          <p
+            className="fade-3"
+            style={{
+              fontSize: "clamp(1rem, 2.2vw, 1.175rem)",
+              color: "#6B6860",
+              lineHeight: 1.7,
+              fontWeight: 300,
+              maxWidth: 640,
+            }}
+          >
+            Meritos is an AI-powered Ecosystem-as-a-Service platform that
+            connects{" "}
+            <strong style={{ fontWeight: 500, color: "#111110" }}>
+              Students, Founders, and Researchers
+            </strong>{" "}
+            with{" "}
+            <strong style={{ fontWeight: 500, color: "#111110" }}>
+              Investors, Corporations, and Government
+            </strong>{" "}
+            — using AI matching that removes the gatekeepers.
+          </p>
+        </div>
+
+        {/* Single primary CTA */}
+        <div
+          className="fade-4 hero-ctas"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: ".875rem",
+            marginBottom: "1.5rem",
+          }}
+        >
+          <a
+            href="/signup"
+            className="cta-btn"
+            style={{
+              background: "#111110",
+              color: "#fff",
+              padding: ".875rem 2rem",
+              borderRadius: 11,
+              fontSize: "1rem",
+            }}
+          >
+            Join the ecosystem — free
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+            >
+              <path
+                d="M3 8h10M9 4l4 4-4 4"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </a>
+          <a
+            href="/enterprise"
+            className="cta-btn"
+            style={{
+              background: "transparent",
+              color: "#6B6860",
+              border: "1px solid #E8E5DF",
+              padding: ".875rem 1.5rem",
+              borderRadius: 11,
+              fontSize: "1rem",
+            }}
+          >
+            Request enterprise access
+          </a>
+        </div>
+
+        <p
+          className="fade-4"
+          style={{ fontSize: ".78rem", color: "#9B9890" }}
+        >
+          <strong style={{ fontWeight: 500, color: "#6B6860" }}>
+            Talent side is 100% free.
+          </strong>{" "}
+          &nbsp;·&nbsp; Investors & Corporations access via subscription.
+        </p>
+
+        {/* Dashboard preview */}
+        <div
+          className="scale-in"
+          style={{
+            marginTop: "4rem",
+            position: "relative",
+          }}
+        >
+          {/* Floating match cards */}
+          <div
+            style={{
+              position: "absolute",
+              top: -20,
+              left: -16,
+              background: "#fff",
+              border: "1px solid #E8E5DF",
+              borderRadius: 12,
+              padding: "10px 14px",
+              boxShadow: "0 8px 28px rgba(0,0,0,.09)",
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              zIndex: 2,
+              animation: "floatA 4.5s ease-in-out infinite",
+            }}
+          >
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: "50%",
+                background: "#ECFDF5",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 15,
+              }}
+            >
+              🔬
             </div>
-            <h1>Where <em>Innovation</em> Meets<br/>Capital and Opportunity</h1>
-            <p className="hero-sub">
-              Meritos is the AI-powered platform bridging the gap between innovators and those who fund, hire, and commercialize them — connecting Students, Founders, and Researchers with Investors, Corporations, and Government.
-            </p>
-            <div className="hero-ctas">
-              <a href="/signup" className="btn-primary btn-primary-lg">
-                Join free as Talent →
-              </a>
-              <a href="/enterprise" className="btn-outline-lg">Request enterprise access</a>
+            <div>
+              <div
+                style={{
+                  fontSize: ".75rem",
+                  fontWeight: 600,
+                  color: "#111110",
+                }}
+              >
+                Dr. Chen Wei matched
+              </div>
+              <div style={{ fontSize: ".65rem", color: "#9B9890" }}>
+                97% fit · MIT · Quantum
+              </div>
             </div>
-            <p className="hero-note">
-              <strong>Supply side is 100% free</strong> &nbsp;·&nbsp; Investors &amp; Corporations access via subscription
-            </p>
           </div>
 
-          <div className="marketplace">
-            <div>
-              <div className="side-label" style={{ color: "var(--accent)" }}>Supply Side · Free</div>
-              <div className="mkt-side">
-                {SUPPLY_USERS.map((u) => (
-                  <div key={u.id} className="mkt-card">
-                    <div className="mkt-icon" style={{ background: u.light }}>{u.icon}</div>
-                    <div className="mkt-card-text">
-                      <div className="mkt-card-title">{u.label}</div>
-                      <div className="mkt-card-sub">{u.id === "students" ? "Academic talent" : u.id === "founders" ? "Early-stage startups" : "Academic researchers"}</div>
-                    </div>
-                    <span className="mkt-tag" style={{ background: u.light, color: u.color }}>Free</span>
+          <div
+            style={{
+              position: "absolute",
+              bottom: -16,
+              right: -8,
+              background: "#fff",
+              border: "1px solid #E8E5DF",
+              borderRadius: 12,
+              padding: "10px 14px",
+              boxShadow: "0 8px 28px rgba(0,0,0,.09)",
+              zIndex: 2,
+              animation: "floatB 5s ease-in-out 1s infinite",
+            }}
+          >
+            <div
+              style={{
+                fontSize: ".65rem",
+                fontWeight: 600,
+                color: "#9B9890",
+                textTransform: "uppercase",
+                letterSpacing: ".06em",
+                marginBottom: 3,
+              }}
+            >
+              ⚡ First-look available
+            </div>
+            <div
+              style={{
+                fontSize: ".9rem",
+                fontWeight: 700,
+                color: "#B45309",
+                fontFamily: "'Bricolage Grotesque', sans-serif",
+              }}
+            >
+              NanoMed Labs · Seed
+            </div>
+            <div style={{ fontSize: ".65rem", color: "#9B9890", marginTop: 1 }}>
+              2 investors already viewed · 47h left
+            </div>
+          </div>
+
+          {/* Main dashboard mock */}
+          <div
+            style={{
+              background: "#111110",
+              borderRadius: 20,
+              border: "1px solid #1F1F1E",
+              overflow: "hidden",
+              boxShadow:
+                "0 24px 60px rgba(0,0,0,.18), 0 4px 12px rgba(0,0,0,.1)",
+            }}
+          >
+            {/* Window bar */}
+            <div
+              style={{
+                background: "#1A1A19",
+                padding: "12px 16px",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                borderBottom: "1px solid #2A2A28",
+              }}
+            >
+              {["#EF4444", "#F59E0B", "#22C55E"].map((c, i) => (
+                <div
+                  key={i}
+                  style={{
+                    width: 11,
+                    height: 11,
+                    borderRadius: "50%",
+                    background: c,
+                  }}
+                />
+              ))}
+              <div
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  justifyContent: "center",
+                }}
+              >
+                <div
+                  style={{
+                    background: "#2A2A28",
+                    borderRadius: 6,
+                    padding: "3px 20px",
+                    fontSize: ".7rem",
+                    color: "rgba(255,255,255,.3)",
+                  }}
+                >
+                  app.meritos.io/dash/investor
+                </div>
+              </div>
+            </div>
+
+            {/* Dashboard content */}
+            <div style={{ padding: "1.5rem", display: "flex", gap: "1.25rem" }}>
+              {/* Sidebar mock */}
+              <div
+                style={{
+                  width: 140,
+                  flexShrink: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 4,
+                }}
+              >
+                {[
+                  { icon: "⊞", label: "Deal Flow", active: true },
+                  { icon: "📁", label: "Portfolio", active: false },
+                  { icon: "🔍", label: "Due Diligence", active: false },
+                  { icon: "⚡", label: "First Look", active: false },
+                ].map((item) => (
+                  <div
+                    key={item.label}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 7,
+                      padding: "7px 10px",
+                      borderRadius: 7,
+                      background: item.active
+                        ? "rgba(180,83,9,.2)"
+                        : "transparent",
+                      borderLeft: item.active
+                        ? "2px solid #B45309"
+                        : "2px solid transparent",
+                    }}
+                  >
+                    <span style={{ fontSize: 12 }}>{item.icon}</span>
+                    <span
+                      style={{
+                        fontSize: ".7rem",
+                        fontWeight: item.active ? 600 : 400,
+                        color: item.active
+                          ? "#F59E0B"
+                          : "rgba(255,255,255,.45)",
+                      }}
+                    >
+                      {item.label}
+                    </span>
                   </div>
                 ))}
               </div>
-            </div>
-            <div className="mkt-center">
-              <span className="mkt-arrow">→</span>
-              <div className="mkt-engine">
-                <div className="mkt-engine-icon">
-                  <svg viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5"/>
-                    <path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                  </svg>
+
+              {/* Main area mock */}
+              <div style={{ flex: 1 }}>
+                <div
+                  style={{
+                    fontSize: ".65rem",
+                    fontWeight: 600,
+                    color: "rgba(255,255,255,.35)",
+                    textTransform: "uppercase",
+                    letterSpacing: ".08em",
+                    marginBottom: 12,
+                  }}
+                >
+                  AI-Matched Deal Flow · 5 new today
                 </div>
-                <div className="mkt-engine-title">AI Matching Engine</div>
-                <div className="mkt-engine-sub">NLP · Vectors · Knowledge Graphs</div>
-              </div>
-              <span className="mkt-arrow">→</span>
-            </div>
-            <div>
-              <div className="side-label" style={{ color: "#0E7A4E" }}>Demand Side · Paid</div>
-              <div className="mkt-side">
-                {DEMAND_USERS.map((u) => (
-                  <div key={u.id} className="mkt-card">
-                    <div className="mkt-icon" style={{ background: u.light }}>{u.icon}</div>
-                    <div className="mkt-card-text">
-                      <div className="mkt-card-title">{u.label}</div>
-                      <div className="mkt-card-sub">{u.id === "investors" ? "VCs & private equity" : u.id === "corporations" ? "Innovation & HR labs" : "Public sector agencies"}</div>
+
+                {/* KPI row */}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(3,1fr)",
+                    gap: 8,
+                    marginBottom: 14,
+                  }}
+                >
+                  {[
+                    { label: "Match Precision", value: "93%", color: "#F59E0B" },
+                    { label: "New Deals", value: "5", color: "#fff" },
+                    { label: "Portfolio", value: "$3.1M", color: "#4ADE80" },
+                  ].map((k) => (
+                    <div
+                      key={k.label}
+                      style={{
+                        background: "rgba(255,255,255,.05)",
+                        border: "1px solid rgba(255,255,255,.08)",
+                        borderRadius: 9,
+                        padding: "10px 12px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: ".58rem",
+                          color: "rgba(255,255,255,.35)",
+                          marginBottom: 3,
+                          textTransform: "uppercase",
+                          letterSpacing: ".05em",
+                        }}
+                      >
+                        {k.label}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "1.25rem",
+                          fontWeight: 700,
+                          color: k.color,
+                          fontFamily: "'Bricolage Grotesque', sans-serif",
+                        }}
+                      >
+                        {k.value}
+                      </div>
                     </div>
-                    <span className="mkt-tag" style={{ background: "#ECFDF5", color: "#0E7A4E" }}>Paid</span>
+                  ))}
+                </div>
+
+                {/* Deal rows */}
+                {[
+                  { name: "NanoMed Labs", type: "BioTech · Seed · $1.2M", match: 97, color: "#4ADE80" },
+                  { name: "GridFlow Energy", type: "CleanTech · Pre-seed · $500k", match: 93, color: "#60A5FA" },
+                  { name: "Draftly AI", type: "SaaS · Seed · $800k", match: 89, color: "#A78BFA" },
+                ].map((d) => (
+                  <div
+                    key={d.name}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: "9px 12px",
+                      background: "rgba(255,255,255,.04)",
+                      border: "1px solid rgba(255,255,255,.06)",
+                      borderRadius: 8,
+                      marginBottom: 6,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 30,
+                        height: 30,
+                        borderRadius: 7,
+                        background: "rgba(255,255,255,.08)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: ".68rem",
+                        fontWeight: 700,
+                        color: "#fff",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {d.name.slice(0, 2)}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div
+                        style={{
+                          fontSize: ".78rem",
+                          fontWeight: 600,
+                          color: "#fff",
+                        }}
+                      >
+                        {d.name}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: ".65rem",
+                          color: "rgba(255,255,255,.4)",
+                        }}
+                      >
+                        {d.type}
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        fontSize: ".9rem",
+                        fontWeight: 700,
+                        color: d.color,
+                        fontFamily: "'Bricolage Grotesque', sans-serif",
+                      }}
+                    >
+                      {d.match}%
+                    </div>
                   </div>
                 ))}
               </div>
@@ -414,278 +957,614 @@ export default function Home() {
         </div>
       </section>
 
-      {/* LOGOS */}
-      <div className="logos-strip">
-        <div className="logos-strip-label">Trusted by universities, funds, and innovation labs</div>
-        <div className="logos-row">
-          {["MIT TTO", "Andreessen", "Y Combinator", "PwC Venturaes", "DOST", "Stanford OTL"].map((n) => (
-            <span key={n} className="logo-name">{n}</span>
-          ))}
+      {/* ═══ MARQUEE LOGOS ═══════════════════════════ */}
+      <div
+        style={{
+          borderTop: "1px solid #E8E5DF",
+          borderBottom: "1px solid #E8E5DF",
+          background: "#fff",
+          padding: "18px 0",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            fontSize: ".68rem",
+            fontWeight: 600,
+            textTransform: "uppercase",
+            letterSpacing: ".1em",
+            color: "#9B9890",
+            textAlign: "center",
+            marginBottom: 12,
+          }}
+        >
+          Trusted by universities, funds and innovation labs
+        </div>
+        <div style={{ overflow: "hidden" }}>
+          <div className="marquee-inner">
+            {[
+              "MIT TTO",
+              "Andreessen Horowitz",
+              "Y Combinator",
+              "PwC Ventures",
+              "DOST Philippines",
+              "Stanford OTL",
+              "UP Diliman",
+              "Sequoia Capital",
+              "MIT TTO",
+              "Andreessen Horowitz",
+              "Y Combinator",
+              "PwC Ventures",
+              "DOST Philippines",
+              "Stanford OTL",
+              "UP Diliman",
+              "Sequoia Capital",
+            ].map((name, i) => (
+              <span
+                key={i}
+                style={{
+                  fontFamily: "'Bricolage Grotesque', sans-serif",
+                  fontSize: "1rem",
+                  fontWeight: 700,
+                  color: "#C8C4BC",
+                  padding: "0 2rem",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {name}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* SUPPLY TABS */}
-      <section className="section" id="users">
-        <div className="section-inner">
-          <p className="section-label">Supply side · Free to join</p>
-          <h2 className="section-title" style={{ marginBottom: "2rem" }}>Built for innovators at every stage</h2>
-          <div className="user-tabs">
-            {SUPPLY_USERS.map((u) => (
-              <button key={u.id} className={`user-tab${activeSupply === u.id ? " active" : ""}`} onClick={() => setActiveSupply(u.id)}>
-                {u.icon} {u.label}
-              </button>
+      {/* ═══ WHO IT'S FOR ════════════════════════════ */}
+      <section
+        id="for-talent"
+        style={{
+          padding: "100px 2rem",
+          maxWidth: 1200,
+          margin: "0 auto",
+        }}
+      >
+        {/* Section header */}
+        <div style={{ marginBottom: "3rem" }}>
+          <p
+            style={{
+              fontSize: ".72rem",
+              fontWeight: 600,
+              textTransform: "uppercase",
+              letterSpacing: ".1em",
+              color: "#1A56DB",
+              marginBottom: ".6rem",
+            }}
+          >
+            The ecosystem
+          </p>
+          <h2
+            style={{
+              fontSize: "clamp(1.75rem, 4vw, 2.75rem)",
+              fontWeight: 700,
+              color: "#111110",
+              marginBottom: ".875rem",
+              maxWidth: 560,
+            }}
+          >
+            Built for both sides of innovation
+          </h2>
+          <p
+            style={{
+              fontSize: "1rem",
+              color: "#6B6860",
+              fontWeight: 300,
+              maxWidth: 500,
+              lineHeight: 1.7,
+            }}
+          >
+            Meritos is a two-sided marketplace. One side is free and builds
+            talent supply. The other is paid and drives commercial demand.
+          </p>
+        </div>
+
+        {/* Toggle */}
+        <div
+          style={{
+            display: "inline-flex",
+            background: "#F3F4F6",
+            borderRadius: 10,
+            padding: 3,
+            marginBottom: "2rem",
+          }}
+        >
+          {(["talent", "enterprise"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setActiveRole(t)}
+              style={{
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: ".875rem",
+                fontWeight: 500,
+                color: activeRole === t ? "#111110" : "#9B9890",
+                background: activeRole === t ? "#fff" : "transparent",
+                border: "none",
+                cursor: "pointer",
+                padding: "7px 20px",
+                borderRadius: 7,
+                boxShadow:
+                  activeRole === t
+                    ? "0 1px 4px rgba(0,0,0,.08)"
+                    : "none",
+                transition: "all .15s",
+                textTransform: "capitalize",
+              }}
+            >
+              {t === "talent"
+                ? "🎓 🚀 🔬  Talent (Free)"
+                : "💼 🏢 🏛️  Enterprise (Paid)"}
+            </button>
+          ))}
+        </div>
+
+        {/* Role cards */}
+        <div
+          className="role-grid"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "1rem",
+          }}
+        >
+          {(activeRole === "talent" ? SUPPLY : DEMAND).map((u) => (
+            <div
+              key={u.label}
+              className="role-card"
+              style={{
+                background: "#fff",
+                border: "1px solid #E8E5DF",
+                borderRadius: 16,
+                padding: "1.625rem",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: "1rem",
+                }}
+              >
+                <div
+                  style={{
+                    width: 46,
+                    height: 46,
+                    borderRadius: 11,
+                    background: u.light,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 22,
+                  }}
+                >
+                  {u.icon}
+                </div>
+                <span
+                  style={{
+                    fontSize: ".65rem",
+                    fontWeight: 600,
+                    background:
+                      activeRole === "talent" ? "#ECFDF5" : "#FFFBEB",
+                    color:
+                      activeRole === "talent" ? "#0E7A4E" : "#B45309",
+                    padding: "3px 10px",
+                    borderRadius: 999,
+                  }}
+                >
+                  {u.tag}
+                </span>
+              </div>
+              <h3
+                style={{
+                  fontSize: "1.05rem",
+                  fontWeight: 700,
+                  color: "#111110",
+                  marginBottom: ".5rem",
+                }}
+              >
+                {u.label}
+              </h3>
+              <p
+                style={{
+                  fontSize: ".875rem",
+                  color: "#6B6860",
+                  lineHeight: 1.6,
+                  fontWeight: 300,
+                }}
+              >
+                {u.desc}
+              </p>
+              <div
+                style={{
+                  marginTop: "1.25rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 5,
+                  fontSize: ".8rem",
+                  fontWeight: 600,
+                  color: u.color,
+                  cursor: "pointer",
+                }}
+              >
+                Learn more
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                  <path
+                    d="M3 8h10M9 4l4 4-4 4"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ═══ HOW IT WORKS ════════════════════════════ */}
+      <section
+        id="how-it-works"
+        style={{
+          background: "#fff",
+          padding: "100px 2rem",
+        }}
+      >
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: "4rem" }}>
+            <p
+              style={{
+                fontSize: ".72rem",
+                fontWeight: 600,
+                textTransform: "uppercase",
+                letterSpacing: ".1em",
+                color: "#1A56DB",
+                marginBottom: ".6rem",
+              }}
+            >
+              How it works
+            </p>
+            <h2
+              style={{
+                fontSize: "clamp(1.75rem, 4vw, 2.75rem)",
+                fontWeight: 700,
+                color: "#111110",
+                marginBottom: ".875rem",
+              }}
+            >
+              From sign-up to match in minutes
+            </h2>
+            <p
+              style={{
+                fontSize: "1rem",
+                color: "#6B6860",
+                fontWeight: 300,
+                maxWidth: 480,
+                margin: "0 auto",
+                lineHeight: 1.7,
+              }}
+            >
+              No recruiter needed. No cold emails. The AI does the work —
+              you just show up and connect.
+            </p>
+          </div>
+
+          <div
+            className="steps-grid"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(4,1fr)",
+              gap: "1.5rem",
+              position: "relative",
+            }}
+          >
+            {[
+              {
+                n: "01",
+                title: "Select your role",
+                body: "Pick from 6 ecosystem roles. Your dashboard and match engine are tailored to you from the start.",
+                color: "#1A56DB",
+                light: "#EEF3FF",
+                icon: "👤",
+              },
+              {
+                n: "02",
+                title: "Build your profile",
+                body: "Our AI parses your LinkedIn, GitHub, and publications to auto-generate your profile in seconds.",
+                color: "#7C3AED",
+                light: "#F5F3FF",
+                icon: "⚡",
+              },
+              {
+                n: "03",
+                title: "Get AI-matched",
+                body: "The matching engine runs vector embeddings and knowledge graphs to surface the highest-fit connections.",
+                color: "#0E7A4E",
+                light: "#ECFDF5",
+                icon: "✦",
+              },
+              {
+                n: "04",
+                title: "Connect & grow",
+                body: "Accept introductions, join events, apply to grants, or review deal flow — all inside one platform.",
+                color: "#B45309",
+                light: "#FFFBEB",
+                icon: "🚀",
+              },
+            ].map((step, i) => (
+              <div
+                key={step.n}
+                style={{
+                  background: "#FAFAF8",
+                  border: "1px solid #E8E5DF",
+                  borderRadius: 16,
+                  padding: "1.625rem",
+                  position: "relative",
+                }}
+              >
+                <div
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 11,
+                    background: step.light,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 20,
+                    marginBottom: "1rem",
+                  }}
+                >
+                  {step.icon}
+                </div>
+                <div
+                  style={{
+                    fontSize: ".65rem",
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: ".08em",
+                    color: step.color,
+                    marginBottom: ".375rem",
+                  }}
+                >
+                  Step {step.n}
+                </div>
+                <h3
+                  style={{
+                    fontSize: "1rem",
+                    fontWeight: 700,
+                    color: "#111110",
+                    marginBottom: ".5rem",
+                  }}
+                >
+                  {step.title}
+                </h3>
+                <p
+                  style={{
+                    fontSize: ".875rem",
+                    color: "#6B6860",
+                    lineHeight: 1.6,
+                    fontWeight: 300,
+                  }}
+                >
+                  {step.body}
+                </p>
+              </div>
             ))}
           </div>
-          <div className="user-panel">
-            <div>
-              <div className="user-panel-badge" style={{ background: su.light, color: su.color }}>
-                {su.icon} {su.label} · {su.tag}
-              </div>
-              <h3>{su.headline}</h3>
-              <p>{su.body}</p>
-              <ul className="perks">
-                {su.perks.map((p) => (
-                  <li key={p} className="perk">
-                    <div className="perk-check" style={{ background: su.light }}>
-                      <svg viewBox="0 0 10 10" fill="none">
-                        <path d="M2 5l2.5 2.5L8 3" stroke={su.color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </div>
-                    {p}
-                  </li>
-                ))}
-              </ul>
-              <div className="panel-ctas">
-                <a href="/signup" className="btn-primary btn-primary-lg" style={{ background: su.color }}>
-                  Join free as {su.label === "Startup Founders" ? "Founder" : su.label.slice(0, -1)}
-                </a>
-                <a href="#demo" className="btn-outline-lg" style={{ fontSize: ".9rem", padding: ".625rem 1.25rem" }}>Learn more</a>
-              </div>
-            </div>
-            <div className="panel-right">
-              <div className="stat-grid">
-                <div className="stat-box">
-                  <div className="stat-box-label">Active profiles</div>
-                  <div className="stat-box-value" style={{ color: su.color }}>{su.stats.profiles}</div>
-                  <div className="stat-box-note" style={{ color: su.color }}>{su.stats.profilesNote}</div>
-                </div>
-                <div className="stat-box">
-                  <div className="stat-box-label">Avg. match rate</div>
-                  <div className="stat-box-value" style={{ color: su.color }}>{su.stats.matchRate}</div>
-                  <div className="stat-box-note" style={{ color: su.color }}>AI-scored</div>
-                </div>
-              </div>
-              <div className="signal-box">
-                <div className="signal-title">AI Match Signals</div>
-                {su.signals.map((s) => (
-                  <div key={s.label} className="signal-row">
-                    <div className="signal-dot" style={{ background: su.color }}/>
-                    <div className="signal-bar-wrap">
-                      <div className="signal-bar" style={{ width: `${s.pct}%`, background: su.color, opacity: .75 }}/>
-                    </div>
-                    <div className="signal-pct">{s.pct}%</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
-      {/* DEMAND TABS */}
-      <section className="section" style={{ background: "#fff", paddingTop: 0 }}>
-        <div className="section-inner">
-          <p className="section-label">Demand side · Enterprise access</p>
-          <h2 className="section-title" style={{ marginBottom: "2rem" }}>AI-curated access for those who fund and scale</h2>
-          <div className="user-tabs">
-            {DEMAND_USERS.map((u) => (
-              <button key={u.id} className={`user-tab${activeDemand === u.id ? " active" : ""}`} onClick={() => setActiveDemand(u.id)}>
-                {u.icon} {u.label}
-              </button>
-            ))}
-          </div>
-          <div className="user-panel">
-            <div>
-              <div className="user-panel-badge" style={{ background: du.light, color: du.color }}>
-                {du.icon} {du.label} · {du.tag}
-              </div>
-              <h3>{du.headline}</h3>
-              <p>{du.body}</p>
-              <ul className="perks">
-                {du.perks.map((p) => (
-                  <li key={p} className="perk">
-                    <div className="perk-check" style={{ background: du.light }}>
-                      <svg viewBox="0 0 10 10" fill="none">
-                        <path d="M2 5l2.5 2.5L8 3" stroke={du.color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </div>
-                    {p}
-                  </li>
-                ))}
-              </ul>
-              <div className="panel-ctas">
-                <a href="/enterprise" className="btn-primary btn-primary-lg" style={{ background: du.color }}>
-                  Request access
-                </a>
-                <a href="#demo" className="btn-outline-lg" style={{ fontSize: ".9rem", padding: ".625rem 1.25rem" }}>See a demo</a>
-              </div>
-            </div>
-            <div className="panel-right">
-              <div className="stat-grid">
-                <div className="stat-box">
-                  <div className="stat-box-label">Avg. time saved</div>
-                  <div className="stat-box-value" style={{ color: du.color }}>{du.stats.saved}</div>
-                  <div className="stat-box-note" style={{ color: du.color }}>per month</div>
-                </div>
-                <div className="stat-box">
-                  <div className="stat-box-label">Match precision</div>
-                  <div className="stat-box-value" style={{ color: du.color }}>{du.stats.matchRate}</div>
-                  <div className="stat-box-note" style={{ color: du.color }}>AI-scored</div>
-                </div>
-              </div>
-              <div className="signal-box">
-                <div className="signal-title">Top Match Signals</div>
-                {du.signals.map((s) => (
-                  <div key={s.label} className="signal-row">
-                    <div className="signal-dot" style={{ background: du.color }}/>
-                    <div className="signal-bar-wrap">
-                      <div className="signal-bar" style={{ width: `${s.pct}%`, background: du.color, opacity: .7 }}/>
-                    </div>
-                    <div className="signal-pct">{s.pct}%</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* TWO-SIDED MODEL */}
-      <section className="section" id="model" style={{ background: "var(--bg)" }}>
-        <div className="section-inner">
-          <div style={{ textAlign: "center", marginBottom: "3rem" }}>
-            <p className="section-label">Marketplace model</p>
-            <h2 className="section-title" style={{ maxWidth: "100%", margin: "0 auto .875rem" }}>A platform built for both sides of innovation</h2>
-            <p className="section-body" style={{ maxWidth: "580px", margin: "0 auto" }}>Meritos creates value by removing friction on both ends — making talent visible, and making discovery effortless.</p>
-          </div>
-          <div className="side-split">
-            <div className="split-panel supply">
-              <div className="split-tag">🎓 🚀 🔬 &nbsp;Supply Side</div>
-              <h3 className="split-title">For talent: a launchpad, not a job board</h3>
-              <p className="split-body">Students, founders, and researchers get instant visibility to verified investors and corporations — bypassing cold emails and closed networks. Profiles are auto-built from LinkedIn, GitHub, and published papers.</p>
-              <ul className="split-list">
-                {["100% free, always", "AI-parsed profiles from your existing digital footprint", "Access to pitch competitions and grant events exclusively on platform", "Direct invitations from verified investors & corporations"].map((i) => (
-                  <li key={i} className="split-item"><span className="split-bullet"/>{i}</li>
-                ))}
-              </ul>
-              <a href="/signup" className="btn-supply">Join as talent — it's free →</a>
-            </div>
-            <div className="split-panel demand">
-              <div className="split-tag">💼 🏢 🏛️ &nbsp;Demand Side</div>
-              <h3 className="split-title">For enterprises: curated signal, not noise</h3>
-              <p className="split-body">Investors, corporations, and government agencies access a pre-vetted database matched to their exact mandates — scored by AI, not filtered by a human assistant.</p>
-              <ul className="split-list">
-                {["Tiered SaaS subscriptions for VC, corporate, and public sector", "First-look access to high-potential talent before public channels", "Integrated due diligence tools and data room access", "GDPR/CCPA-compliant data with accreditation verification"].map((i) => (
-                  <li key={i} className="split-item"><span className="split-bullet"/>{i}</li>
-                ))}
-              </ul>
-              <a href="/enterprise" className="btn-demand">Request enterprise access →</a>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* AI ENGINE */}
-      <section className="section ai-section" id="ai">
-        <div className="section-inner">
-          <div className="ai-grid">
-            <div>
-              <p className="ai-label">Intelligence Core</p>
-              <h2 className="ai-title">The AI matching engine that cuts through noise</h2>
-              <p className="ai-body">Meritos doesn't rely on keyword search. Our three-layer AI architecture calculates contextual relevance at scale — delivering the right match, at the right time.</p>
-              <div className="ai-cards">
-                {[
-                  { title: "NLP & Vector Embeddings (GPT-4o)", body: "Converts research papers and pitch decks into mathematical vectors, calculating Cosine Similarity against investor mandates and corporate problem statements." },
-                  { title: "Knowledge Graphs (Neo4j)", body: "Maps hidden relationships across the ecosystem — matching a researcher to an investor based on shared university ties, co-authorship, or overlapping research niche." },
-                  { title: "Vector Database (Pinecone)", body: "Lightning-fast retrieval of top-ranked matches across millions of data points so your dashboard updates in real time as new talent joins." },
-                ].map((c) => (
-                  <div key={c.title} className="ai-card">
-                    <div className="ai-card-icon">
-                      <svg viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5"/>
-                        <path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                      </svg>
-                    </div>
-                    <div><h4>{c.title}</h4><p>{c.body}</p></div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="ai-visual">
-              <div className="ai-vis-label">Live Match Results · Investor Dashboard</div>
+      {/* ═══ AI ENGINE STRIP ═════════════════════════ */}
+      <section
+        style={{
+          background: "#111110",
+          padding: "80px 2rem",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 1200,
+            margin: "0 auto",
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "4rem",
+            alignItems: "center",
+          }}
+          className="hero-grid"
+        >
+          <div>
+            <p
+              style={{
+                fontSize: ".72rem",
+                fontWeight: 600,
+                textTransform: "uppercase",
+                letterSpacing: ".1em",
+                color: "rgba(255,255,255,.35)",
+                marginBottom: ".75rem",
+              }}
+            >
+              Intelligence core
+            </p>
+            <h2
+              style={{
+                fontSize: "clamp(1.75rem, 3.5vw, 2.5rem)",
+                fontWeight: 700,
+                color: "#fff",
+                marginBottom: "1rem",
+                lineHeight: 1.2,
+              }}
+            >
+              AI that cuts through noise — not keyword search
+            </h2>
+            <p
+              style={{
+                fontSize: "1rem",
+                color: "rgba(255,255,255,.55)",
+                lineHeight: 1.7,
+                fontWeight: 300,
+                marginBottom: "2rem",
+              }}
+            >
+              Three-layer architecture delivers contextual relevance at
+              scale. The right match, at the right moment.
+            </p>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: ".875rem",
+              }}
+            >
               {[
-                { emoji: "🚀", name: "NanoMed Labs", type: "Seed-stage BioTech startup", score: 97, color: "#4ADE80" },
-                { emoji: "🔬", name: "Dr. Chen Wei", type: "MIT Researcher · Quantum Computing", score: 91, color: "#60A5FA" },
-                { emoji: "🎓", name: "Aisha Bautista", type: "CS Graduate · AI/ML Focus", score: 85, color: "#A78BFA" },
-                { emoji: "🏛️", name: "GridFlow Energy", type: "Gov-backed CleanTech initiative", score: 79, color: "#34D399" },
-              ].map((m) => (
-                <div key={m.name} className="match-result">
-                  <div className="match-avatar">{m.emoji}</div>
-                  <div className="match-info">
-                    <div className="match-name">{m.name}</div>
-                    <div className="match-type">{m.type}</div>
+                {
+                  title: "NLP & Vector Embeddings (GPT-4o)",
+                  body: "Converts research papers and pitch decks into mathematical vectors, then calculates Cosine Similarity against investor mandates.",
+                },
+                {
+                  title: "Knowledge Graphs (Neo4j)",
+                  body: "Maps hidden relationships — shared university ties, co-authorship, and research niche overlap — to find non-obvious matches.",
+                },
+                {
+                  title: "Vector Database (Pinecone)",
+                  body: "Lightning-fast retrieval across millions of data points so your dashboard is always live and current.",
+                },
+              ].map((c) => (
+                <div
+                  key={c.title}
+                  style={{
+                    background: "rgba(255,255,255,.05)",
+                    border: "1px solid rgba(255,255,255,.09)",
+                    borderRadius: 12,
+                    padding: "1rem 1.25rem",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: ".85rem",
+                      fontWeight: 600,
+                      color: "#fff",
+                      marginBottom: 4,
+                    }}
+                  >
+                    {c.title}
                   </div>
-                  <div style={{ textAlign: "right" }}>
-                    <div className="score-num" style={{ color: m.color }}>{m.score}%</div>
-                    <div className="score-label">match</div>
+                  <div
+                    style={{
+                      fontSize: ".8rem",
+                      color: "rgba(255,255,255,.45)",
+                      lineHeight: 1.6,
+                      fontWeight: 300,
+                    }}
+                  >
+                    {c.body}
                   </div>
                 </div>
               ))}
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* STATS */}
-      <section className="section stats-section">
-        <div className="section-inner">
-          <div className="stats-grid">
+          {/* Live match visual */}
+          <div
+            style={{
+              background: "rgba(255,255,255,.04)",
+              border: "1px solid rgba(255,255,255,.09)",
+              borderRadius: 20,
+              padding: "1.75rem",
+            }}
+          >
+            <div
+              style={{
+                fontSize: ".65rem",
+                fontWeight: 600,
+                textTransform: "uppercase",
+                letterSpacing: ".08em",
+                color: "rgba(255,255,255,.3)",
+                marginBottom: "1.25rem",
+              }}
+            >
+              Live match results · Investor view
+            </div>
             {[
-              { value: "13,500+", label: "Ecosystem members globally" },
-              { value: "93%", label: "AI match precision rate" },
-              { value: "3×", label: "Faster deal sourcing for investors" },
-              { value: "80%", label: "Less time spent fundraising" },
-            ].map((s) => (
-              <div key={s.label}>
-                <div className="stat-value">{s.value}</div>
-                <div className="stat-label">{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ROADMAP */}
-      <section className="section" id="roadmap" style={{ background: "var(--bg)" }}>
-        <div className="section-inner">
-          <p className="section-label">Strategic roadmap</p>
-          <h2 className="section-title">Built to scale from liquidity to market dominance</h2>
-          <p className="section-body">A three-phase strategy designed to build critical mass before monetization, ensuring sustainable network effects.</p>
-          <div className="roadmap-grid">
-            {[
-              { cls: "phase-1", phase: "Phase 1 · Liquidity Build", title: "MVP Launch & University Partnerships", body: "Launch the MVP and partner with 3 major universities to onboard 5,000+ students and researchers. Supply side must reach critical mass before the demand side opens.", milestone: "Target: 5,000+ supply-side profiles" },
-              { cls: "phase-2", phase: "Phase 2 · Monetization", title: "Open to Investors & Corporations", body: "Open the platform to a waitlist of 50 VC firms and corporate innovation labs. Begin generating SaaS revenue through tiered subscriptions and 3-month free pilots.", milestone: "Target: $1M ARR from demand side" },
-              { cls: "phase-3", phase: "Phase 3 · Scale", title: "C-Corp Conversion & Seed Round", body: "Transition from LLC to Delaware C-Corp. Raise a Seed round to scale the sales team, expand to national university ecosystems, and introduce placement success fees.", milestone: "Target: Seed round · National expansion" },
-            ].map((r) => (
-              <div key={r.phase} className={`roadmap-card ${r.cls}`}>
-                <div className="roadmap-phase">{r.phase}</div>
-                <h3>{r.title}</h3>
-                <p>{r.body}</p>
-                <div className="roadmap-milestone">
-                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-                    <path d="M3 8l3.5 3.5L13 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  {r.milestone}
+              { emoji: "🚀", name: "NanoMed Labs", type: "Seed · BioTech", score: 97, color: "#4ADE80" },
+              { emoji: "🔬", name: "Dr. Chen Wei", type: "MIT · Quantum Computing", score: 91, color: "#60A5FA" },
+              { emoji: "🎓", name: "Aisha Bautista", type: "CS Graduate · AI/ML", score: 85, color: "#A78BFA" },
+              { emoji: "🚀", name: "GridFlow Energy", type: "Pre-seed · CleanTech", score: 79, color: "#4ADE80" },
+            ].map((m) => (
+              <div
+                key={m.name}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  background: "rgba(255,255,255,.05)",
+                  border: "1px solid rgba(255,255,255,.07)",
+                  borderRadius: 10,
+                  padding: ".875rem 1rem",
+                  marginBottom: ".625rem",
+                }}
+              >
+                <div
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: 8,
+                    background: "rgba(255,255,255,.08)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 16,
+                    flexShrink: 0,
+                  }}
+                >
+                  {m.emoji}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div
+                    style={{
+                      fontSize: ".82rem",
+                      fontWeight: 600,
+                      color: "#fff",
+                    }}
+                  >
+                    {m.name}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: ".68rem",
+                      color: "rgba(255,255,255,.4)",
+                    }}
+                  >
+                    {m.type}
+                  </div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div
+                    style={{
+                      fontSize: "1.05rem",
+                      fontWeight: 700,
+                      color: m.color,
+                      fontFamily: "'Bricolage Grotesque', sans-serif",
+                    }}
+                  >
+                    {m.score}%
+                  </div>
+                  <div
+                    style={{
+                      fontSize: ".58rem",
+                      color: "rgba(255,255,255,.3)",
+                    }}
+                  >
+                    match
+                  </div>
                 </div>
               </div>
             ))}
@@ -693,66 +1572,548 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="section cta-section">
-        <div className="cta-box">
-          <h2>Ready to plug into the innovation ecosystem?</h2>
-          <p>Whether you're building, researching, investing, or hiring — Meritos is your platform. Join the ecosystem shortening the distance between big ideas and the capital they need.</p>
-          <div className="cta-actions">
-            <a href="/signup" className="btn-cta-white">
-              Join free as Talent →
+      {/* ═══ STATS ═══════════════════════════════════ */}
+      <section
+        style={{
+          background: "#1A56DB",
+          padding: "72px 2rem",
+        }}
+      >
+        <div
+          className="stats-grid"
+          style={{
+            maxWidth: 1200,
+            margin: "0 auto",
+            display: "grid",
+            gridTemplateColumns: "repeat(4,1fr)",
+            gap: "2rem",
+            textAlign: "center",
+          }}
+        >
+          {[
+            { to: 13500, suffix: "+", label: "Ecosystem members globally" },
+            { to: 93, suffix: "%", label: "AI match precision rate" },
+            { to: 3, suffix: "×", label: "Faster deal sourcing" },
+            { to: 80, suffix: "%", label: "Less time fundraising" },
+          ].map((s) => (
+            <div key={s.label}>
+              <div
+                style={{
+                  fontSize: "clamp(2.25rem,5vw,3.25rem)",
+                  fontWeight: 700,
+                  color: "#fff",
+                  fontFamily: "'Bricolage Grotesque', sans-serif",
+                  lineHeight: 1,
+                  marginBottom: 8,
+                }}
+              >
+                <Counter to={s.to} suffix={s.suffix} />
+              </div>
+              <div
+                style={{
+                  fontSize: ".875rem",
+                  color: "rgba(255,255,255,.65)",
+                  fontWeight: 300,
+                }}
+              >
+                {s.label}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ═══ TESTIMONIALS ════════════════════════════ */}
+      <section
+        style={{
+          padding: "100px 2rem",
+          background: "#FAFAF8",
+        }}
+      >
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: "3.5rem" }}>
+            <p
+              style={{
+                fontSize: ".72rem",
+                fontWeight: 600,
+                textTransform: "uppercase",
+                letterSpacing: ".1em",
+                color: "#1A56DB",
+                marginBottom: ".6rem",
+              }}
+            >
+              Testimonials
+            </p>
+            <h2
+              style={{
+                fontSize: "clamp(1.75rem, 4vw, 2.5rem)",
+                fontWeight: 700,
+                color: "#111110",
+              }}
+            >
+              Loved by every side of the ecosystem
+            </h2>
+          </div>
+          <div
+            className="tgrid"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3,1fr)",
+              gap: "1.25rem",
+            }}
+          >
+            {TESTIMONIALS.map((t) => (
+              <div
+                key={t.name}
+                className="tcard"
+                style={{
+                  background: "#fff",
+                  border: "1px solid #E8E5DF",
+                  borderRadius: 16,
+                  padding: "1.75rem",
+                  transition: "border-color .2s, box-shadow .2s",
+                }}
+              >
+                <div
+                  style={{
+                    color: "#F59E0B",
+                    fontSize: ".875rem",
+                    marginBottom: "1rem",
+                    letterSpacing: 2,
+                  }}
+                >
+                  ★★★★★
+                </div>
+                <p
+                  style={{
+                    fontSize: ".9375rem",
+                    color: "#111110",
+                    lineHeight: 1.7,
+                    fontWeight: 300,
+                    marginBottom: "1.25rem",
+                    fontStyle: "italic",
+                  }}
+                >
+                  "{t.quote}"
+                </p>
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: 10 }}
+                >
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: "50%",
+                      background: t.color,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: ".65rem",
+                      fontWeight: 700,
+                      color: "#fff",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {t.initials}
+                  </div>
+                  <div>
+                    <div
+                      style={{
+                        fontSize: ".825rem",
+                        fontWeight: 600,
+                        color: "#111110",
+                      }}
+                    >
+                      {t.name}
+                    </div>
+                    <div style={{ fontSize: ".75rem", color: "#9B9890" }}>
+                      {t.role}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ FINAL CTA — single focused action ═══════ */}
+      <section
+        id="for-enterprise"
+        style={{ padding: "100px 2rem", background: "#fff" }}
+      >
+        <div
+          style={{
+            maxWidth: 680,
+            margin: "0 auto",
+            textAlign: "center",
+          }}
+        >
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 7,
+              background: "#EEF3FF",
+              border: "1px solid #C7D9FA",
+              borderRadius: 999,
+              padding: "5px 14px",
+              marginBottom: "1.5rem",
+            }}
+          >
+            <span
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: "50%",
+                background: "#1A56DB",
+                animation: "pulse 2s infinite",
+              }}
+            />
+            <span
+              style={{
+                fontSize: ".75rem",
+                fontWeight: 600,
+                color: "#1A56DB",
+              }}
+            >
+              Join 13,500+ ecosystem members
+            </span>
+          </div>
+
+          <h2
+            style={{
+              fontSize: "clamp(2rem,5vw,3.25rem)",
+              fontWeight: 800,
+              color: "#111110",
+              marginBottom: "1rem",
+              lineHeight: 1.1,
+            }}
+          >
+            Ready to plug into the innovation ecosystem?
+          </h2>
+          <p
+            style={{
+              fontSize: "1rem",
+              color: "#6B6860",
+              fontWeight: 300,
+              lineHeight: 1.7,
+              marginBottom: "2.5rem",
+            }}
+          >
+            Students, founders, and researchers join free. Investors,
+            corporations, and government agencies get enterprise access.
+            Everyone gets the AI.
+          </p>
+
+          {/* Email capture */}
+          {!submitted ? (
+            <form
+              onSubmit={handleSubmit}
+              style={{
+                display: "flex",
+                gap: ".625rem",
+                maxWidth: 480,
+                margin: "0 auto 1rem",
+                flexWrap: "wrap",
+              }}
+            >
+              <input
+                type="email"
+                required
+                placeholder="Enter your work email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="email-input"
+                style={{
+                  flex: 1,
+                  minWidth: 200,
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: ".9375rem",
+                  color: "#111110",
+                  background: "#FAFAF8",
+                  border: "1.5px solid #E8E5DF",
+                  borderRadius: 10,
+                  padding: ".75rem 1rem",
+                  outline: "none",
+                  transition: "border-color .15s, box-shadow .15s",
+                }}
+              />
+              <button
+                type="submit"
+                disabled={submitting}
+                className="cta-btn"
+                style={{
+                  background: "#111110",
+                  color: "#fff",
+                  padding: ".75rem 1.5rem",
+                  borderRadius: 10,
+                  fontSize: ".9375rem",
+                  opacity: submitting ? 0.65 : 1,
+                  cursor: submitting ? "not-allowed" : "pointer",
+                }}
+              >
+                {submitting ? "Joining…" : "Join free →"}
+              </button>
+            </form>
+          ) : (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 12,
+                background: "#ECFDF5",
+                border: "1px solid #D1FAE5",
+                borderRadius: 12,
+                padding: "1rem 1.5rem",
+                maxWidth: 480,
+                margin: "0 auto 1rem",
+              }}
+            >
+              <div
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  background: "#0E7A4E",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#fff",
+                  fontSize: ".8rem",
+                  fontWeight: 700,
+                  flexShrink: 0,
+                }}
+              >
+                ✓
+              </div>
+              <div style={{ textAlign: "left" }}>
+                <div
+                  style={{
+                    fontSize: ".875rem",
+                    fontWeight: 600,
+                    color: "#0E7A4E",
+                  }}
+                >
+                  You're on the list!
+                </div>
+                <div
+                  style={{
+                    fontSize: ".78rem",
+                    color: "#065F46",
+                    fontWeight: 300,
+                  }}
+                >
+                  We'll reach out within 24 hours to set up your account.
+                </div>
+              </div>
+            </div>
+          )}
+
+          <p style={{ fontSize: ".75rem", color: "#9B9890" }}>
+            Talent side is free — no credit card. &nbsp;·&nbsp;{" "}
+            <a
+              href="/enterprise"
+              style={{ color: "#6B6860", textDecoration: "underline" }}
+            >
+              Request enterprise access instead
             </a>
-            <a href="/enterprise" className="btn-cta-outline">Request enterprise access</a>
-          </div>
+          </p>
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="footer">
-        <div className="footer-inner">
-          <div className="footer-top">
-            <div className="footer-brand">
-              <a href="#" className="logo">
-                <div className="logo-mark">
-                  <svg viewBox="0 0 16 16" fill="none">
-                    <path d="M2 9l3.5 3.5L14 4" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+      {/* ═══ FOOTER ══════════════════════════════════ */}
+      <footer
+        style={{
+          background: "#111110",
+          padding: "56px 2rem 40px",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 1200,
+            margin: "0 auto",
+          }}
+        >
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "2fr 1fr 1fr 1fr",
+              gap: "3rem",
+              marginBottom: "3rem",
+            }}
+            className="hero-grid"
+          >
+            {/* Brand */}
+            <div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  marginBottom: ".875rem",
+                }}
+              >
+                <div
+                  style={{
+                    width: 28,
+                    height: 28,
+                    background: "#1A56DB",
+                    borderRadius: 7,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                    <path
+                      d="M2 9l3.5 3.5L14 4"
+                      stroke="#fff"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                 </div>
-                Meritos
-              </a>
-              <p>The Ecosystem-as-a-Service platform connecting innovation with capital, talent with opportunity.</p>
+                <span
+                  style={{
+                    fontFamily: "'Bricolage Grotesque', sans-serif",
+                    fontWeight: 700,
+                    fontSize: "1.1rem",
+                    color: "#fff",
+                  }}
+                >
+                  Meritos
+                </span>
+              </div>
+              <p
+                style={{
+                  fontSize: ".875rem",
+                  color: "rgba(255,255,255,.45)",
+                  lineHeight: 1.65,
+                  fontWeight: 300,
+                  maxWidth: 260,
+                }}
+              >
+                The Ecosystem-as-a-Service platform connecting innovation
+                with capital, talent with opportunity.
+              </p>
             </div>
-            <div className="footer-col">
-              <h4>Platform</h4>
-              <ul>
-                {["For Students", "For Founders", "For Researchers", "For Investors", "For Corporations", "For Government"].map((l) => (
-                  <li key={l}><a href="#">{l}</a></li>
-                ))}
-              </ul>
-            </div>
-            <div className="footer-col">
-              <h4>Company</h4>
-              <ul>
-                {["About Meritos", "University Partners", "Blog", "Careers", "Contact"].map((l) => (
-                  <li key={l}><a href="#">{l}</a></li>
-                ))}
-              </ul>
-            </div>
-            <div className="footer-col">
-              <h4>Legal</h4>
-              <ul>
-                {["Privacy Policy", "Terms of Service", "GDPR Compliance", "Security"].map((l) => (
-                  <li key={l}><a href="#">{l}</a></li>
-                ))}
-              </ul>
-            </div>
+
+            {[
+              {
+                title: "Platform",
+                links: [
+                  "For Students",
+                  "For Founders",
+                  "For Researchers",
+                  "For Investors",
+                  "For Corporations",
+                  "For Government",
+                ],
+              },
+              {
+                title: "Company",
+                links: [
+                  "About Meritos",
+                  "University Partners",
+                  "Blog",
+                  "Careers",
+                  "Contact",
+                ],
+              },
+              {
+                title: "Legal",
+                links: [
+                  "Privacy Policy",
+                  "Terms of Service",
+                  "GDPR",
+                  "Security",
+                ],
+              },
+            ].map((col) => (
+              <div key={col.title}>
+                <div
+                  style={{
+                    fontSize: ".72rem",
+                    fontWeight: 600,
+                    textTransform: "uppercase",
+                    letterSpacing: ".08em",
+                    color: "rgba(255,255,255,.35)",
+                    marginBottom: "1rem",
+                  }}
+                >
+                  {col.title}
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: ".5rem",
+                  }}
+                >
+                  {col.links.map((l) => (
+                    <a
+                      key={l}
+                      href="#"
+                      style={{
+                        fontSize: ".875rem",
+                        color: "rgba(255,255,255,.5)",
+                        textDecoration: "none",
+                        fontWeight: 300,
+                        transition: "color .15s",
+                      }}
+                      onMouseEnter={(e) =>
+                        ((e.currentTarget as HTMLElement).style.color =
+                          "rgba(255,255,255,.85)")
+                      }
+                      onMouseLeave={(e) =>
+                        ((e.currentTarget as HTMLElement).style.color =
+                          "rgba(255,255,255,.5)")
+                      }
+                    >
+                      {l}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
-          <div className="footer-bottom">
-            <p className="footer-copy">© {new Date().getFullYear()} Meritos · Ecosystem-as-a-Service</p>
-            <div className="footer-legal">
-              <a href="#">Privacy</a>
-              <a href="#">Terms</a>
-              <a href="#">Sitemap</a>
+
+          <div
+            style={{
+              borderTop: "1px solid rgba(255,255,255,.08)",
+              paddingTop: "1.5rem",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: "1rem",
+            }}
+          >
+            <p
+              style={{
+                fontSize: ".78rem",
+                color: "rgba(255,255,255,.3)",
+              }}
+            >
+              © {new Date().getFullYear()} Meritos · Ecosystem-as-a-Service
+            </p>
+            <div style={{ display: "flex", gap: "1.5rem" }}>
+              {["Privacy", "Terms", "Sitemap"].map((l) => (
+                <a
+                  key={l}
+                  href="#"
+                  style={{
+                    fontSize: ".78rem",
+                    color: "rgba(255,255,255,.3)",
+                    textDecoration: "none",
+                  }}
+                >
+                  {l}
+                </a>
+              ))}
             </div>
           </div>
         </div>
